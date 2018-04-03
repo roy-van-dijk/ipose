@@ -1,0 +1,1 @@
+{"declKompas":100,"declZwOog":50,"declKleurOog":200,"declVariabele":30,"zolang":50,"als":40,"opdracht":20,"toekenning":10,"paardenSprong":5,"stapVooruit":1,"stapAchteruit":1,"draaiLinks":5,"draaiRechts":5,"zwOog":10,"kleurOog":20,"kompas":15,"duw":100,"toewijzing":2,"operatie":2,"vergelijking":2,"startKapitaal":274,"gemiddeld":1,"maximaal":1,"minimaal":1}
