@@ -1,0 +1,4 @@
+sprong
+
+draaiLinks
+draaiRechts

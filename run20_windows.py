@@ -10,6 +10,7 @@ import string
 import random
 import sys
 import ast
+from array import array
 
 # prognaam = str(sys.argv[1]) + '\n'
 fnaam = str(sys.argv[1])
@@ -17,11 +18,11 @@ with open(fnaam) as f:
 	programma = f.read() + 'xxx\n'
 
 
-fnaam= str(sys.argv[2])  
+fnaam= str(sys.argv[2])
 with open(fnaam) as f:
 	doolhof	 = f.read()
 
-fnaam= str(sys.argv[3])  
+fnaam= str(sys.argv[3])
 with open(fnaam) as f:
 	kostenStr = f.read()
 
@@ -29,11 +30,13 @@ kostenKaart = ast.literal_eval(str(kostenStr))
 
 debuglevel = 1 #print kosten en baten = 1; print status = 2;  print targets = 4
 
+stappen = ""
+
 doeterniettoe = '\n \t'
 
 def logItem(text):
-    
-    if text.__class__.__name__.lower() == "status": 
+
+    if text.__class__.__name__.lower() == "status":
         if debuglevel & 2:
             print text
     else:
@@ -51,45 +54,45 @@ def logItem(text):
             print text
         if text[0:4].lower() == 'stuk' and debuglevel & 2:
             print text
-            
+
         if text[0:4].lower() == "doel" and debuglevel & 1:
             print text
         if text[0:6].lower() == "nieuwe" and debuglevel & 1:
             print text
         if text[0:12].lower() == "uitzondering" and debuglevel & 1:
             print text
-        
-        
-        
-        
+
+
+
+
 
 def getWoord(status):
-     
+
     while status.cursor < len(programma) and programma[status.cursor] in doeterniettoe:
         status.cursor += 1
         if status.cursor == len(programma) -1:
             status.einde = True
     woord = ''
-    
+
     while not status.einde and programma[status.cursor] not in doeterniettoe:
         woord = woord + programma[status.cursor]
         status.cursor += 1
         if status.cursor == len(programma) -1:
-            status.einde = True    
+            status.einde = True
     return woord
 
 def verwerkGebruik(status):
     wat = getWoord(status);
     status.ingebruik.append(wat)
-    print wat 
+    print wat
     if len(wat) == 1:
         status.waarde[wat] = 0
     if wat in string.ascii_letters:
         status.kapitaal -= status.kostenKaart['declVariabele']
-        logItem ("kosten voor declaratie variabele '" + wat + "': " + str(status.kostenKaart['declVariabele'])) 
+        logItem ("kosten voor declaratie variabele '" + wat + "': " + str(status.kostenKaart['declVariabele']))
     else:
         status.kapitaal -= status.kostenKaart['decl' + wat[0].upper() + wat[1:]]
-        logItem("kosten voor declaratie '" + wat + "': " + str(status.kostenKaart['decl' + wat[0].upper() + wat[1:]]))  
+        logItem("kosten voor declaratie '" + wat + "': " + str(status.kostenKaart['decl' + wat[0].upper() + wat[1:]]))
 
 
 def verwerkSeconde(status):
@@ -109,7 +112,7 @@ def verwerkSeconde(status):
             status.bommen[index] = [status.bommen[index][0],status.bommen[index][1] - 1]
     for index in sorted(moetWeg, reverse=True):
         del status.bommen[index]
-    
+
     if status.cells[status.location[0]][status.location[1]][0].lower() == "r":
         if int(status.cells[status.location[0]][status.location[1]][1]) == 0:
             status.zetDirection(status.direction + random.randint(0,3))
@@ -119,7 +122,7 @@ def verwerkSeconde(status):
             logItem("nieuwe richting na draaien = " + str(status.direction))
 
     status.seconden += 1
-               
+
 def verwerkNieuwePositie(status):
     if status.location == status.targets[0]:
         status.targets.remove(status.location)
@@ -132,10 +135,10 @@ def verwerkNieuwePositie(status):
 
     if status.cells[status.location[0]][status.location[1]][0].lower() == "s":
         status.zetKleur(0)
-    
+
     if status.cells[status.location[0]][status.location[1]][0].lower() == "c":
         status.zetKleur(int(status.cells[status.location[0]][status.location[1]][1]))
-                
+
     if status.cells[status.location[0]][status.location[1]][0].lower() == "e":
         status.zetKleur(4)
         status.kapitaal += 2 ** int(status.cells[status.location[0]][status.location[1]][1])
@@ -144,6 +147,8 @@ def verwerkNieuwePositie(status):
 
     if status.cells[status.location[0]][status.location[1]][0].lower() == "r":
         status.zetKleur(2)
+        global stappen
+        stappen = stappen + str(status.location[0]) + "," + str(status.location[1]) + ";"
 
     if status.cells[status.location[0]][status.location[1]][0].lower() == "b":
         status.zetKleur(0)
@@ -155,19 +160,19 @@ def verwerkStapVooruit(status):
     if int(status.direction) == 0:
         waarheen = [waarheen[0]-1, waarheen[1]]
     if int(status.direction) == 1:
-        waarheen = [waarheen[0], waarheen[1]+1]        
+        waarheen = [waarheen[0], waarheen[1]+1]
     if int(status.direction) == 2:
         waarheen = [waarheen[0]+1, waarheen[1]]
     if int(status.direction) == 3:
         waarheen = [waarheen[0], waarheen[1]-1]
-        
+
     if waarheen[0] < 0 or waarheen[0] > 19 or waarheen[1] < 0 or waarheen[1] > 19:
         logItem ('uitzondering: Uit the Glade gelopen! [' + str(waarheen[0]) + ',' + str(waarheen[1]) + ']\nThe rule say\'s: "Don\'t enter the maze"')
         raise Exception('uitzondering: Uit the Glade gelopen! [' + str(waarheen[0]) + ',' + str(waarheen[1]) + ']\nThe rule say\'s: "Don\'t enter the maze"')
-    
+
     if status.cells[waarheen[0]][waarheen[1]][0].lower() in 'csbder':
         status.location = waarheen
-        status.kapitaal -= status.kostenKaart['stapVooruit'] 
+        status.kapitaal -= status.kostenKaart['stapVooruit']
         logItem ("kosten voor stap vooruit: " + str(status.kostenKaart['stapVooruit']) + " naar: [" + str(waarheen[0]) +"," + str(waarheen[1]) + "]")
 
         verwerkNieuwePositie(status)
@@ -181,15 +186,19 @@ def verwerkStapAchteruit(status):
     if int(status.direction) == 2:
         waarheen = [waarheen[0]-1, waarheen[1]]
     if int(status.direction) == 3:
-        waarheen = [waarheen[0], waarheen[1]+1]        
+        waarheen = [waarheen[0], waarheen[1]+1]
     if int(status.direction) == 0:
         waarheen = [waarheen[0]+1, waarheen[1]]
     if int(status.direction) == 1:
         waarheen = [waarheen[0], waarheen[1]-1]
-        
+
+    if waarheen[0] < 0 or waarheen[0] > 19 or waarheen[1] < 0 or waarheen[1] > 19:
+        logItem ('uitzondering: Uit the Glade gelopen! [' + str(waarheen[0]) + ',' + str(waarheen[1]) + ']\nThe rule say\'s: "Don\'t enter the maze"')
+        raise Exception('uitzondering: Uit the Glade gelopen! [' + str(waarheen[0]) + ',' + str(waarheen[1]) + ']\nThe rule say\'s: "Don\'t enter the maze"')
+
     if status.cells[waarheen[0]][waarheen[1]][0].lower() in 'csbder':
         status.location = waarheen
-        status.kapitaal -= status.kostenKaart['stapAchteruit'] 
+        status.kapitaal -= status.kostenKaart['stapAchteruit']
         logItem ("kosten voor stap achteruit: " + str(status.kostenKaart['stapAchteruit']) + " naar: [" + str(waarheen[0]) +"," + str(waarheen[1]) + "]")
 
         verwerkNieuwePositie(status)
@@ -198,20 +207,49 @@ def verwerkStapAchteruit(status):
         logItem ("kosten voor botsen / duwen: " + str(status.kostenKaart['duw']))
     verwerkSeconde(status)
 
+def verwerkSprong(status):
+    waarheen = status.location
+    if int(status.direction) == 0:
+        waarheen = [waarheen[0] - 2, waarheen[1]]
+    if int(status.direction) == 1:
+        waarheen = [waarheen[0], waarheen[1] + 2]
+    if int(status.direction) == 2:
+        waarheen = [waarheen[0] + 2, waarheen[1]]
+    if int(status.direction) == 3:
+        waarheen = [waarheen[0], waarheen[1] - 2]
 
+    if waarheen[0] < 0 or waarheen[0] > 19 or waarheen[1] < 0 or waarheen[1] > 19:
+        logItem ('uitzondering: Uit the Glade gelopen! [' + str(waarheen[0]) + ',' + str(waarheen[1]) + ']\nThe rule say\'s: "Don\'t enter the maze"')
+        raise Exception('uitzondering: Uit the Glade gelopen! [' + str(waarheen[0]) + ',' + str(waarheen[1]) + ']\nThe rule say\'s: "Don\'t enter the maze"')
 
+    if status.cells[waarheen[0]][waarheen[1]][0].lower() in 'csbder':
+        status.location = waarheen
+        status.kapitaal -= status.kostenKaart['sprong']
+        logItem ("kosten voor een sprong: " + str(status.kostenKaart['sprong']) + " naar: [" + str(waarheen[0]) +"," + str(waarheen[1]) + "]")
+
+        verwerkNieuwePositie(status)
+
+    else: # dus o
+        status.kapitaal -= status.kostenKaart['duw']
+        logItem ("kosten voor botsen / duwen: " + str(status.kostenKaart['duw']))
+
+    verwerkSeconde(status)
 
 def verwerkDraaiRechts(status):
     status.zetDirection(status.direction + 1)
-    status.kapitaal -= status.kostenKaart['draaiRechts'] 
+    status.kapitaal -= status.kostenKaart['draaiRechts']
     logItem ("kosten voor het draaien naar rechts: " + str(status.kostenKaart['draaiRechts']))
     verwerkSeconde(status)
+    global stappen
+    stappen = stappen + str(status.location[0]) + "," + str(status.location[1]) + ";"
 
 def verwerkDraaiLinks(status):
     status.zetDirection(status.direction - 1)
-    status.kapitaal -= status.kostenKaart['draaiLinks'] 
+    status.kapitaal -= status.kostenKaart['draaiLinks']
     logItem ("kosten voor het draaien naar links: " + str(status.kostenKaart['draaiLinks']))
     verwerkSeconde(status)
+    global stappen
+    stappen = stappen + str(status.location[0]) + "," + str(status.location[1]) + ";"
 
 def verwerkExpressie(status):
     woord = getWoord(status)
@@ -275,26 +313,26 @@ def doeBlok(status):
         while status.kapitaal > 0 and len(status.targets) > 0 and not status.einde:
             doeStap(status)
             logItem(status)
-            
+
         if len(status.targets) > 0:
             status.einde = False
 
 def skipBlok(status):
     if len(status.targets) > 0:
         nextwoord = getWoord(status)
-        stop = 1        
-        while stop > 0 and nextwoord != '': 
-            nextwoord = getWoord(status) 
+        stop = 1
+        while stop > 0 and nextwoord != '':
+            nextwoord = getWoord(status)
             if nextwoord == "}":
                 stop -= 1
             if nextwoord == "{":
                 stop += 1
-            
+
 def verwerkAls(status):
     links = verwerkExpressie(status)
     operator = getWoord(status)
     rechts = verwerkExpressie(status)
-    
+
     if operator == '==':
         uitslag = links == rechts
     if operator == '!=':
@@ -306,32 +344,32 @@ def verwerkAls(status):
 
     status.kapitaal -= status.kostenKaart['vergelijking']
     logItem ("kosten voor het vergelijken: " + str(status.kostenKaart['vergelijking']))
-    
+
     if uitslag and not status.einde and len(status.targets) > 0 and status.kapitaal > 0 :
         doeBlok(status)
-                    
+
         alsCursor = status.cursor
         if getWoord(status) == 'anders':
             skipBlok(status)
         else:
             status.cursor = alsCursor
-    
+
     if not uitslag and not status.einde and len(status.targets) > 0 and status.kapitaal > 0 :
         skipBlok(status)
-                    
+
         alsCursor = status.cursor
         if getWoord(status) == 'anders':
             doeBlok(status)
         else:
             status.cursor = alsCursor
-            
-            
+
+
 def verwerkZolang(status):
     cursor = status.cursor
     links = verwerkExpressie(status)
     operator = getWoord(status)
     rechts = verwerkExpressie(status)
-    
+
     if operator == '==':
         uitslag = links == rechts
     if operator == '!=':
@@ -342,17 +380,17 @@ def verwerkZolang(status):
         uitslag = links > rechts
     status.kapitaal -= status.kostenKaart['vergelijking']
     logItem ("kosten voor het vergelijken: " + str(status.kostenKaart['vergelijking']))
-    
+
     while uitslag and len(status.targets) > 0 and status.kapitaal > 0 and not status.einde:
-        
+
         doeBlok(status)
-        
+
         if status.kapitaal > 0 and len(status.targets) > 0 and not status.einde:
             status.cursor = cursor
             links = verwerkExpressie(status)
             operator = getWoord(status)
             rechts = verwerkExpressie(status)
-            
+
             if operator == '==':
                 uitslag = links == rechts
             if operator == '!=':
@@ -366,7 +404,12 @@ def verwerkZolang(status):
 
     if status.kapitaal > 0 and len(status.targets) > 0 and not status.einde:
         skipBlok(status)
-        
+
+
+def verwerkOpslaan ():
+    stappenbestand = open("stappen.txt", "w")
+    stappenbestand.write(stappen)
+
 
 def doeStap(status):
 
@@ -374,9 +417,9 @@ def doeStap(status):
     if woord.lower() == "gebruik":
         verwerkGebruik(status)
 
-    if woord.lower() in string.ascii_letters and woord != '': 
+    if woord.lower() in string.ascii_letters and woord != '':
         verwerkToekenning(status, woord.lower())
-        
+
     if woord.lower() == "zolang":
         verwerkZolang(status)
     if woord.lower() == "als":
@@ -385,14 +428,14 @@ def doeStap(status):
         verwerkStapVooruit(status)
     if woord.lower() == "stapachteruit":
         verwerkStapAchteruit(status)
-    if woord.lower() == "springpaardlinks":
-        verwerkSpringPaardLinks(status)
-    if woord.lower() == "springpaardrechts":
-	verwerkSpringPaardRechts(status)
     if woord.lower() == "draailinks":
         verwerkDraaiLinks(status)
     if woord.lower() == "draairechts":
         verwerkDraaiRechts(status)
+    if woord.lower() == "sprong":
+        verwerkSprong(status)
+    if woord.lower() == "opslaan":
+        verwerkOpslaan()
     if woord.lower() == "}":
         status.einde = True
 
@@ -400,29 +443,29 @@ def chunks(line, n):
     toreturn = []
     for i in xrange(0, len(line), n):
         toreturn.append(line[i:i+n])
-    return toreturn		
-		
-		
+    return toreturn
+
+
 class Status(object):
-    
+
     def __str__(self):
         return str(self.cursor) + " " + str(self.kapitaal) + " " + str(self.direction) + " " + str(self.targets) + " " + str(self.einde) + " " + str(self.seconden)  \
             + " " + str(self.ingebruik) + " " + str(self.location) + " '" + programma[self.cursor:self.cursor + 40].replace("\n"," ") + "'"
 
     def findStartEnDoelEnBommen(self):
-        '''Zoek in een verzameling van 20 bij 20 cellen het startpunt, 
+        '''Zoek in een verzameling van 20 bij 20 cellen het startpunt,
         de startrichting en de doelen die bereikt moeten worden'''
-        
+
         foundStart = False
-        foundTargets = 0    
+        foundTargets = 0
         targets = [[21,21]] * 10
-        foundBonuses = 0    
+        foundBonuses = 0
         bonuses = [[21,21]] * 10
         self.bommen = []
         self.location = [0,0]
         self.direction = 0
         self.resultaat = ""
-        
+
         for i in range(0,20):
             for j in range(0,20):
 		print i,j,self.cells[i][j]
@@ -439,8 +482,8 @@ class Status(object):
                         foundTargets += 1
                         targets[int(self.cells[i][j][1])] = [i,j]
                     else:
-                        logItem ("uitzondering: Doel " + self.cells[i][j][1] + " is dubbel gedefinieerd op [" + str(i) + ", " + str(j) + "]") 
-                        raise Exception("uitzondering: Doel " + self.cells[i][j][1] + " is dubbel gedefinieerd op [" + str(i) + ", " + str(j) + "]") 
+                        logItem ("uitzondering: Doel " + self.cells[i][j][1] + " is dubbel gedefinieerd op [" + str(i) + ", " + str(j) + "]")
+                        raise Exception("uitzondering: Doel " + self.cells[i][j][1] + " is dubbel gedefinieerd op [" + str(i) + ", " + str(j) + "]")
                 if self.cells[i][j][0].upper() == 'S':
                     if foundStart:
                         logItem ("uitzondering: Twee startplaatsen in het doolhof")
@@ -448,8 +491,8 @@ class Status(object):
                     else:
                         self.location = [i,j]
                         self.zetDirection(int(self.cells[i][j][1]))
-                        foundStart = True     
-                              
+                        foundStart = True
+
         if not foundStart:
             logItem ("uitzondering: Geen startplaatsen in het doolhof")
             raise Exception("uitzondering: Geen startplaatsen in het doolhof")
@@ -468,9 +511,9 @@ class Status(object):
 
     def createCells(self):
         lines = self.doolhof.split('\n')
-        print len(lines) 
+        print len(lines)
 	self.cells = []
-        
+
         for line in lines:
             print "[" + line + "]"
             self.cells.append(chunks(line, 2))
@@ -485,16 +528,16 @@ class Status(object):
                 return 1
         if wat == "kompas":
             return self.direction
-    
+
     def zetKleur(self, kleur):
-        self.kleur = kleur 
+        self.kleur = kleur
         self.waarde["kleurOog"] = self.getWaarde("kleurOog")
         self.waarde["zwOog"] = self.getWaarde("zwOog")
 
     def zetDirection(self, direction):
-        self.direction = direction % 4 
+        self.direction = direction % 4
         self.waarde["kompas"] = self.getWaarde("kompas")
-        
+
     def __init__(self):
         self.doolhof = doolhof
         self.ingebruik = []
@@ -516,13 +559,13 @@ class Status(object):
         self.kapitaal -= (str(programma).lower().count(" = ") * int(kostenKaart["toekenning"] ))
         print "kosten toekenning: " + str(str(programma).lower().count(" = ")) + " * " + str(kostenKaart["toekenning"])
         self.zetKleur(0)
-        
-        
+
+
 if __name__ == '__main__':
 
     status = Status()
     logItem (status)
-    
+
     while status.kapitaal > 0 and len(status.targets) > 0 and not status.einde:
         #status = doeStap(status)
         doeStap(status)
@@ -531,7 +574,7 @@ if __name__ == '__main__':
     if status.resultaat == "" and status.kapitaal <= 0:
         status.resultaat = "Budget op"
     logItem (status)
-    print status.resultaat 
-    
-
-
+    print status.resultaat
+    print stappen
+    stappenbestand = open("stappen.txt", "w")
+    stappenbestand.write(stappen)
